@@ -1,1 +1,0 @@
-# Pandemic-Response-System-by-Predicting-Outbreak-Hotspots
