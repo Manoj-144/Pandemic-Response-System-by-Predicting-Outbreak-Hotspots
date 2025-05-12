@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pandemic Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Animate.css -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <!-- Plotly & CountUp -->
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/countup.js/2.0.7/countUp.umd.js"></script>
+
+  <style>
+    :root {
+      --deep-green: #18230F;
+      --dark-green: #27391C;
+      --medium-green: #255F38;
+      --bright-green: #1F7D53;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9fbfd;
+      color: var(--deep-green);
+    }
+
+    .custom-header {
+  background-color: var(--medium-green);
+}
+
+
+    .custom-link:hover {
+      color: #a3f7b5;
+    }
+
+    .custom-heading {
+      color: var(--medium-green);
+    }
+
+    .custom-card-title {
+      color: var(--dark-green);
+    }
+
+    .custom-footer {
+      background-color: var(--bright-green);
+      color: white;
+    }
+
+    .alert-panel {
+      background-color: #fef3c7;
+      border-left: 5px solid #facc15;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="custom-header shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-white text-2xl font-semibold animate__animated animate__fadeInDown">
+        Pandemic Response System - Tamil Nadu
+      </h1>
+      <nav class="space-x-6">
+        <a href="/" class="text-white font-medium custom-link">Home</a>
+        <a href="/analysis" class="text-white font-medium custom-link">Analysis</a>
+        <a href="/hotspots" class="text-white font-medium custom-link">Hotspots</a>
+        <a href="/resource-allocation" class="text-white font-medium custom-link">Resources</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-6xl mx-auto mt-10 px-4">
+
+    <!-- Overview Counters -->
+    <h2 class="text-3xl font-semibold mb-6 custom-heading animate__animated animate__fadeIn">Overview</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <h3 class="text-lg font-bold custom-card-title mb-2">Total Cases</h3>
+        <p id="cases" class="text-3xl text-pink-600 font-semibold">0</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <h3 class="text-lg font-bold custom-card-title mb-2">Total Deaths</h3>
+        <p id="deaths" class="text-3xl text-red-600 font-semibold">0</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <h3 class="text-lg font-bold custom-card-title mb-2">Total Recoveries</h3>
+        <p id="recoveries" class="text-3xl text-green-600 font-semibold">0</p>
+      </div>
+      <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+        <h3 class="text-lg font-bold custom-card-title mb-2">Districts Covered</h3>
+        <p id="taluks" class="text-3xl text-indigo-600 font-semibold">0</p>
+      </div>
+    </div>
+
+    <!-- Mini Map Preview -->
+    <div class="mt-10 bg-white shadow-md rounded-2xl p-6">
+      <h3 class="text-xl font-bold custom-heading mb-4">🗺️ Hotspot Map Preview</h3>
+      <iframe src="{{ url_for('static', filename='tamilnadu_hotspot_map.html') }}"
+              width="100%" height="600" class="rounded-lg border"></iframe>
+    </div>
+
+    <!-- Line Chart -->
+    <div class="mt-10 bg-white shadow-md rounded-2xl p-6">
+      <h3 class="text-xl font-bold custom-heading mb-4">📈 Daily Case Trend</h3>
+      <div id="line-chart"></div>
+    </div>
+
+    <!-- Alerts Section -->
+    <div class="mt-10 p-4 alert-panel rounded">
+      <h3 class="text-xl font-semibold">📢 Alerts</h3>
+      <ul class="list-disc list-inside mt-2 space-y-1">
+        <li>Keep your vaccinations up to date.</li>
+        <li>Wash hands regularly and wear masks in high-density areas.</li>
+        <li>Stay home if you have symptoms and get tested immediately.</li>
+      </ul>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="custom-footer mt-16 py-6">
+    <div class="max-w-6xl mx-auto px-4 text-center">
+      <p class="mb-2">Developed by Manoj R , Mithun Kumar GT and Pranav S | SRM University</p>
+      <p class="text-sm">This dashboard provides insights into Tamil Nadu's disease outbreaks for smarter decision-making.</p>
+    </div>
+  </footer>
+
+  <!-- Dynamic JS Injection -->
+  <script>
+    const stats = JSON.parse('{{ stats | tojson | safe }}');
+    const dailyTrend = JSON.parse('{{ daily_trend | tojson | safe }}');
+
+    // CountUp animations
+    new countUp.CountUp('cases', stats.total_cases).start();
+    new countUp.CountUp('deaths', stats.total_deaths).start();
+    new countUp.CountUp('recoveries', stats.total_recoveries).start();
+    new countUp.CountUp('taluks', stats.total_taluks).start();
+
+    // Plotly Line Chart
+    const lineTrace = {
+      x: dailyTrend.dates,
+      y: dailyTrend.cases,
+      type: 'scatter',
+      mode: 'lines+markers',
+      marker: { color: '#1F7D53' },
+      line: { shape: 'spline', color: '#255F38' }
+    };
+
+    Plotly.newPlot('line-chart', [lineTrace], {
+      margin: { t: 10, b: 50, l: 40, r: 10 },
+      xaxis: { title: "Date" },
+      yaxis: { title: "Cases" },
+      paper_bgcolor: "#fff",
+      plot_bgcolor: "#fff"
+    });
+  </script>
+</body>
+</html>

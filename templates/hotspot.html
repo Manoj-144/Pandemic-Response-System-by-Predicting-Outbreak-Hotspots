@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Disease Hotspots</title>
+
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        :root {
+          --deep-green: #18230F;
+          --dark-green: #27391C;
+          --medium-green: #255F38;
+          --bright-green: #1F7D53;
+        }
+    
+        body {
+          font-family: 'Segoe UI', sans-serif;
+          background-color: #f9fbfd;
+          color: var(--deep-green);
+        }
+    
+        .custom-header {
+      background-color: var(--medium-green);
+    }
+    
+    
+        .custom-link:hover {
+          color: #a3f7b5;
+        }
+    
+        .custom-heading {
+          color: var(--medium-green);
+        }
+    
+        .custom-card-title {
+          color: var(--dark-green);
+        }
+    
+        .custom-footer {
+          background-color: var(--bright-green);
+          color: white;
+        }
+    
+        .alert-panel {
+          background-color: #fef3c7;
+          border-left: 5px solid #facc15;
+          color: #92400e;
+        }
+      </style>
+    <style>
+        .select2-container--default .select2-selection--single {
+            height: 44px;
+            padding: 6px 12px;
+            border-radius: 0.5rem;
+            border: 1px solid #d1d5db;
+        }
+        .select2-container--default .select2-selection__arrow {
+            height: 42px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+
+    <!-- Navbar -->
+    <nav class="bg-green-700 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-xl font-semibold">Pandemic Response System</h1>
+            <div class="space-x-6">
+                <a href="/" class="hover:text-green-300">Home</a>
+                <a href="/analysis" class="hover:text-green-300">Analysis</a>
+                <a href="/hotspots" class="hover:text-green-300">Hotspots</a>
+                <a href="/resource-allocation" class="hover:text-green-300">Resources</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main -->
+    <main class="max-w-6xl mx-auto px-4 mt-10 mb-20">
+        <h2 class="text-3xl font-semibold text-center text-green-800 mb-6">Outbreak Hotspots</h2>
+
+        <!-- Filter -->
+        <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
+            <select name="disease" id="disease-select" class="w-72">
+                <option value="">All Diseases</option>
+                {% for disease in disease_list %}
+                    <option value="{{ disease }}" {% if selected_disease == disease %}selected{% endif %}>{{ disease }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Choropleth Map -->
+        <div id="map-container" class="bg-white shadow rounded-lg p-4">
+            {{ map_html | safe }}
+        </div>
+
+        <!-- Insights -->
+        <div id="insights-container" class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {% for insight in insights %}
+            <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
+                <h4 class="text-lg font-semibold text-gray-700">{{ insight.title }}</h4>
+                <p class="text-gray-600 mt-2">{{ insight.value }}</p>
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script>
+        $(document).ready(function () {
+            $('#disease-select').select2({
+                placeholder: "Select a disease",
+                allowClear: true
+            });
+
+            $('#disease-select').on('change', function () {
+                const selectedDisease = $(this).val();
+
+                $.ajax({
+                    url: '/hotspots/data',
+                    method: 'GET',
+                    data: { disease: selectedDisease },
+                    success: function (data) {
+                        $('#map-container').html(data.map_html);
+                        $('#insights-container').html('');
+
+                        data.insights.forEach(insight => {
+                            $('#insights-container').append(`
+                                <div class="bg-white shadow rounded-lg p-4 border border-gray-200">
+                                    <h4 class="text-lg font-semibold text-gray-700">${insight.title}</h4>
+                                    <p class="text-gray-600 mt-2">${insight.value}</p>
+                                </div>
+                            `);
+                        });
+                    },
+                    error: function () {
+                        alert('Error loading data.');
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>

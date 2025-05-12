@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resource Allocation | Pandemic Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Animate.css -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
+  <style>
+    :root {
+      --deep-green: #18230F;
+      --dark-green: #27391C;
+      --medium-green: #255F38;
+      --bright-green: #1F7D53;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f9fbfd;
+      color: var(--deep-green);
+    }
+    .custom-header { background-color: var(--medium-green); }
+    .custom-link:hover { color: #a3f7b5; }
+    .custom-heading { color: var(--medium-green); }
+    .custom-card-title { color: var(--dark-green); }
+    .custom-footer { background-color: var(--bright-green); color: white; }
+
+    .btn-green {
+      background-color: var(--bright-green);
+      color: white;
+      transition: background-color .2s;
+    }
+    .btn-green:hover {
+      background-color: var(--medium-green);
+    }
+
+    .select-field {
+      width: 310px;
+      border: 2px solid #067836;
+      border-radius: .375rem;
+      padding: .5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .table-custom th {
+      background-color: var(--medium-green);
+      color: white;
+      text-transform: uppercase;
+    }
+    .table-custom td,
+    .table-custom th {
+      padding: .75rem 1rem;
+    }
+    .table-custom tr:nth-child(even) {
+      background-color: #f4f7f6;
+    }
+    .table-custom tr:hover {
+      background-color: #e8f1ed;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAVBAR -->
+  <header class="custom-header sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <h1 class="text-white text-2xl font-semibold animate__animated animate__fadeInDown">
+        Pandemic Response System - Tamil Nadu
+      </h1>
+      <nav class="space-x-6">
+        <a href="/"          class="text-white font-medium custom-link">Home</a>
+        <a href="/analysis"  class="text-white font-medium custom-link">Analysis</a>
+        <a href="/hotspots"  class="text-white font-medium custom-link">Hotspots</a>
+        <a href="/resource-allocation"
+                           class="text-white font-medium custom-link">Resources</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="max-w-screen-xl mx-auto px-6 mt-10">
+
+    <!-- TITLE -->
+    <h2 class="text-3xl font-semibold mb-6 custom-heading animate__animated animate__fadeIn">
+      Resource Allocation Dashboard
+    </h2>
+
+    <!-- AVAILABLE RESOURCES -->
+    <section class="mb-8">
+      <h3 class="text-xl font-semibold mb-4 custom-heading">Available Resources</h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {% for key, val in available.items() %}
+          <div class="bg-white rounded-2xl shadow-md p-6 text-center">
+            <h4 class="text-lg font-medium custom-card-title mb-2">{{ key }}</h4>
+            <p class="text-2xl font-bold text-indigo-600">{{ val }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- SHORTAGES SUMMARY -->
+    <h3 class="text-xl font-semibold mb-4 custom-heading">Shortages</h3>
+    <section class="mb-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {% for key, value in shortages.items() %}
+        <div class="bg-white rounded-2xl shadow-md p-6 flex justify-between items-center">
+          <div>
+            <h3 class="text-lg font-medium custom-card-title">{{ key }}</h3>
+
+          </div>
+          <span class="text-xl font-bold {{ 'text-red-600' if value > 0 else 'text-green-600' }}">
+            {{ value }}
+          </span>
+        </div>
+      {% endfor %}
+    </section>
+
+    <!-- FILTER FORM -->
+    <form method="GET"
+          action="{{ url_for('resource_bp.resource_allocation') }}"
+          class="grid grid-cols-1 md:grid-cols-3 gap-6 justify-items-center mb-16 mx-auto">
+      <div class="text-center">
+        <label for="disease"
+               class="block text-lg font-medium text-gray-700 mb-2">Select Disease</label>
+        <select name="disease" id="disease" class="select-field">
+          <option value="">All Diseases</option>
+          {% for disease in disease_list %}
+            <option value="{{ disease }}"
+              {% if disease == selected_disease %}selected{% endif %}>
+              {{ disease }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="text-center">
+        <label for="taluk"
+               class="block text-lg font-medium text-gray-700 mb-2">Select District</label>
+        <select name="taluk" id="taluk" class="select-field">
+          <option value="">All Districts</option>
+          {% for taluk in taluk_list %}
+            <option value="{{ taluk }}"
+              {% if taluk == selected_taluk %}selected{% endif %}>
+              {{ taluk }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button type="submit"
+                class="btn-green w-64 py-3 rounded-lg font-semibold text-lg">
+          Filter
+        </button>
+      </div>
+    </form>
+
+    <!-- ALLOCATION TABLE -->
+    <section class="overflow-x-auto mb-16">
+      <table class="table-custom min-w-[1200px] w-full rounded-lg overflow-hidden">
+        <thead>
+          <tr>
+            <th>District</th>
+            <th>Disease</th>
+            <th class="text-right">Cases</th>
+            <th class="text-right">Hosp. Cap.</th>
+            <th class="text-right">ICU Beds</th>
+            <th class="text-right">Ventilators</th>
+            <th class="text-right">Doctors</th>
+            <th class="text-right">Nurses</th>
+            <th class="text-right">Ambulances</th>
+            <th class="text-right">Medicines</th>
+            <th class="text-right">Masks</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in grouped_data %}
+            <tr>
+              <td>{{ row['Taluk'] }}</td>
+              <td>{{ row['Disease'] }}</td>
+              <td class="text-right">{{ row['Cases'] }}</td>
+              <td class="text-right">{{ row['Hospital Capacity'] }}</td>
+              <td class="text-right">{{ row['ICU Beds'] }}</td>
+              <td class="text-right">{{ row['Ventilators'] }}</td>
+              <td class="text-right">{{ row['Required Doctors'] }}</td>
+              <td class="text-right">{{ row['Required Nurses'] }}</td>
+              <td class="text-right">{{ row['Required Ambulances'] }}</td>
+              <td class="text-right">{{ row['Required Medicines'] }}</td>
+              <td class="text-right">{{ row['Required Masks'] }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="custom-footer py-6 mt-16">
+    <div class="max-w-7xl mx-auto text-center px-6">
+      <p class="mb-2">Developed by Manoj R, Mithun Kumar GT, and Pranav S | SRM University</p>
+      <p class="text-sm">This dashboard provides insights into Tamil Nadu's disease outbreaks for smarter decision-making.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
